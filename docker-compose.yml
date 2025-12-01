@@ -1,0 +1,47 @@
+services:
+  startup:
+    image: busybox
+    command: sh -c "chown -R 1001:1001 /data && chmod -R g+w /data"
+    volumes: 
+      - app_data:/data
+
+  code-server:
+    image: lscr.io/linuxserver/code-server:latest
+    container_name: code-server
+    hostname: code-server
+    environment:
+      - PUID=1001
+      - PGID=1001
+      - TZ=Etc/UTC
+      - DEFAULT_WORKSPACE=/app #optional
+      - PWA_APPNAME=code-server #optional
+    networks:
+      - mijn_netwerk
+    volumes:
+      - ./config:/config
+      - app_data:/app_data
+    depends_on:
+      - startup
+
+    ports:
+      - 8443:8443
+    restart: unless-stopped
+
+  app:
+    container_name: py-server
+    hostname: py-server
+    build: .
+    tty: true
+    networks:
+      - mijn_netwerk
+    volumes:
+      - app_data:/app_data
+    depends_on:
+      - startup
+
+volumes:
+    app_data:
+
+networks:
+  mijn_netwerk:
+    driver: bridge
